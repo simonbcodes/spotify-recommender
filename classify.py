@@ -1,9 +1,14 @@
 import pandas as pd
 import numpy as np
 import os, sys, pickle
+import matplotlib.pyplot as plt
 from sklearn.externals import joblib
+from sklearn.manifold import TSNE
+from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
 from sklearn import tree
 from sklearn import preprocessing
+from sklearn.linear_model import SGDClassifier
 
 scope = 'playlist-modify-private playlist-read-private user-library-read'
 
@@ -32,11 +37,46 @@ testing_features = testing_features.drop(columns=['Song Name', 'Artist', 'Album'
 testing_features_scaled = scaler.transform(testing_features) # scale testing features
 testing_labels = np.concatenate([np.ones((1, len(test_liked_songs))), np.zeros((1, len(test_disliked_songs)))], axis=1)[0] # set labels
 
-clf = tree.DecisionTreeClassifier(criterion='entropy', max_depth=10, random_state=0) # create Decision Tree Classifier
+# model = TSNE(learning_rate=100, random_state=0)
+# dbscan = DBSCAN()
+#
+# dbscan.fit(training_features)
+#
+# pca = PCA(n_components=2).fit(training_features)
+# pca_2d = pca.transform(training_features)
+#
+# c1 = None
+# c2 = None
+# c3 = None
+#
+# for i in range(0, pca_2d.shape[0]):
+#     if dbscan.labels_[i] == 0:
+#         c1 = plt.scatter(pca_2d[i, 0], pca_2d[i, 1], c='r', marker='+')
+#     elif dbscan.labels_[i] == 1:
+#         c2 = plt.scatter(pca_2d[i, 0], pca_2d[i, 1], c='g', marker='o')
+#     elif dbscan.labels_[i] == -1:
+#         c3 = plt.scatter(pca_2d[i, 0], pca_2d[i, 1], c='b', marker='*')
+#
+# plt.legend([c1, c2, c3], ['Cluster 1', 'Cluster 2', 'Noise'])
+# plt.title('DBSCAN finds 2 clusters and Noise')
+# plt.show()
 
-clf.fit(training_features_scaled, training_labels) # train classifier on input data
+# transformed = model.fit_transform(training_features)
+#
+# print(transformed)
+#
+# x_axis = transformed[:, 0]
+# y_axis = transformed[:, 1]
+#
+# plt.scatter(x_axis, y_axis, c=training_labels)
+#
+# plt.show()
 
-print(clf.score(testing_features_scaled, testing_labels)) # score it
-# print(clf.feature_importances_)
-
-joblib.dump(clf, 'dtclf.pkl') # pickle the classifier
+# clf = tree.DecisionTreeClassifier(criterion='entropy', max_depth=10, random_state=0) # create Decision Tree Classifier
+#
+# clf.fit(training_features_scaled, training_labels) # train classifier on input data
+#
+# print(clf.score(testing_features_scaled, testing_labels)) # score it
+# # print(clf.feature_importances_)
+#
+# joblib.dump(clf, 'dtclf.pkl') # pickle the classifier

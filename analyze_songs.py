@@ -1,5 +1,6 @@
 import spotipy
 import spotipy.util as util
+from sklearn.externals import joblib
 import pandas as pd
 import os, sys
 import config
@@ -20,23 +21,13 @@ def average_song(): # returns a dict of average characterstics from all saved so
         average[category] = song_info[category].mean()
     return average
 
-song_info['Genre'] = song_info['Genre'].apply(literal_eval) #convert string array to list in df
+def song_to_dict(features):
+    return {
+    'Duration': features['duration_ms'], 'Danceability': features['danceability'], 'Instrumentalness': features['instrumentalness'], \
+    'Speechiness': features['speechiness'], 'Energy': features['energy'], 'Mode': features['mode'], 'Tempo': features['tempo'], 'Liveness': features['liveness'], \
+    'Loudness': features['loudness'], 'Key': features['key'], 'Acousticness': features['acousticness']}
 
-if len(sys.argv) > 1: # get username
-    username = sys.argv[1]
-else:
-    print("Usage: {} username".format(sys.argv[1]))
-    sys.exit()
-
-client_id = config.spotipy_client_id #spotipy api
-client_secret = config.spotipy_secret_id
-redirect_uri = 'http://localhost/'
-
-token = util.prompt_for_user_token(username, scope, client_id=client_id, client_secret=client_secret, redirect_uri=redirect_uri)
-
-if token:
-    average_song_values = average_song() # get average values
-    sp = spotipy.Spotify(auth=token)
+def generate_playlist(sp):
     playlists = sp.user_playlists(user=sys.argv[1], limit=50) # get all playlists from user
 
     for play in playlists['items']: # check if playlist exists already
@@ -76,5 +67,45 @@ if token:
 
     classify_playlist.to_csv('playlist_info.csv', encoding='utf-8', index=False) # write added songs to CSV
     print('Playlist written to CSV')
+
+song_info['Genre'] = song_info['Genre'].apply(literal_eval) #convert string array to list in df
+
+if len(sys.argv) > 1: # get username
+    username = sys.argv[1]
 else:
-    print('no token)
+    print("Usage: {} username".format(sys.argv[1]))
+    sys.exit()
+
+client_id = config.spotipy_client_id #spotipy api
+client_secret = config.spotipy_secret_id
+redirect_uri = 'http://localhost/'
+
+token = util.prompt_for_user_token(username, scope, client_id=client_id, client_secret=client_secret, redirect_uri=redirect_uri)
+
+clf = joblib.load('dtclf.pkl')
+
+if token:
+    average_song_values = average_song() # get average values
+    sp = spotipy.Spotify(auth=token)
+    # generate_playlist(sp)
+    for genre in all_genres:
+        print(genre)
+        recommended = sp.recommendations(seed_genres=[genre], limit=50)
+        tracks_to_analyze = []
+        if len(recommended['tracks']) != 0:
+            for track in recommended['tracks']:
+                #print(track)
+                tracks_to_analyze.append(track['id'])
+            features = sp.audio_features(tracks_to_analyze)
+            will_like_songs = 0
+            total = 0
+            for track in features:
+                total += 1
+                if clf.predict([list(song_to_dict(track).values())]) == 1:
+                    will_like_songs += 1
+            print('{}/{}'.format(will_like_songs, total))
+
+
+
+else:
+    print('no token')
